@@ -1,6 +1,13 @@
 import react, { useEffect } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, AsyncStorage } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /* CÓDIGO JS */
 export default function App() {
@@ -8,29 +15,34 @@ export default function App() {
   const [anotacao, setAnotacao] = react.useState('');
 
   useEffect(() => {
-    (async () => {
-      try {
-        const value = await AsyncStorage.getItem('anotacao');
-        if (value !== null) setAnotacao(value)
-      } catch (error) {
-        console.log(error, 'Error!');
+    (
+      async () => {
+        try {
+          const value = await AsyncStorage.getItem('@storage_Key')
+          if (value !== null) {
+            setAnotacao(value);
+          }
+        } catch (e) {
+        }
       }
-    })();
+    )();
   }, [])
 
-  async function setData() {
+  const setData = async () => {
     try {
-      await AsyncStorage.setItem('anotacao', anotacao);
+      await AsyncStorage.setItem('@storage_Key', anotacao)
       setEstado('leitura');
-    } catch (error) {
-      alert('Não foi possível salvar a edição.');
+    } catch (e) {
+      console.error(error, 'Algo deu errado ao ler o histórico.')
     }
-    alert('Anotação salva.');
   }
 
   function atualizarTexto() {
-    setEstado('leitura');
     setData();
+  }
+
+  function handlePress() {
+    setEstado('atualizando');
   }
 
   /* RENDERIZAÇÃO */
@@ -46,9 +58,10 @@ export default function App() {
             Aplicativo Anotação
           </Text>
         </View>
-        {(anotacao) ? (
+        <Text style={{ marginTop: 8, marginLeft: 8 }}>Sua anotação: </Text>
+        {(anotacao !== '') ? (
           <View style={{ padding: 20 }}>
-            <Text style={styles.anotacao}>
+            <Text style={{ ...styles.anotacao, opacity: 0.7 }}>
               {anotacao}
             </Text>
           </View>
@@ -60,23 +73,17 @@ export default function App() {
           </View>
         )}
         <TouchableOpacity
-          style={anotacao === '' ? styles.btnAnotacao : styles.btnSalvar}
-          onPress={() => setEstado('atualizando')}
+          style={styles.btnAnotacao}
+          onPress={handlePress}
         >
-          {
-            (anotacao === '') ? (
-              <Text style={styles.btnAnotacaoTexto}>+</Text>
-            ) : (
-              <Text style={styles.btnAnotacaoTexto}>Editar</Text>
-            )
-          }
+          <Text style={styles.btnAnotacaoTexto}>+</Text>
         </TouchableOpacity>
         <StatusBar style="auto" hidden />
       </View>
     );
   }
 
-  else if (estado == 'atualizando') {
+  if (estado === 'atualizando') {
     return (
       <View style={{ width: '100%', flex: 1 }}>
         <View style={styles.header}>
@@ -88,6 +95,7 @@ export default function App() {
             Aplicativo Anotação
           </Text>
         </View>
+        <Text style={{ marginTop: 8, marginLeft: 8 }}>Em edição: </Text>
         <TextInput
           autoFocus={true}
           onChangeText={(text) => setAnotacao(text)}
@@ -97,7 +105,10 @@ export default function App() {
           style={{
             padding: 8,
             marginBottom: 16,
-            textAlignVertical: 'top'
+            margin: 8,
+            textAlignVertical: 'top',
+            borderWidth: 1,
+            borderColor: '#ccc'
           }}
         >
         </TextInput>
@@ -109,9 +120,8 @@ export default function App() {
             Salvar
           </Text>
         </TouchableOpacity>
-        <Text>Atualizando...</Text>
         <StatusBar style="auto" hidden />
-      </View>
+      </View >
     )
   }
 
