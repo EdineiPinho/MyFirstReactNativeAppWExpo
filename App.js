@@ -1,20 +1,42 @@
+import react, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, TouchableOpacity } from 'react-native';
-import { useState } from 'react';
-import react from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, AsyncStorage } from 'react-native';
 
+/* CÓDIGO JS */
 export default function App() {
   const [estado, setEstado] = react.useState('leitura');
-  const [anotacao, setAnotacao] = react.useState('Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquam, a commodi voluptas vel error, dolorum ratione natus, totam et est placeat optio? Laudantium tempora sequi sit optio omnis adipisci blanditiis.');
+  const [anotacao, setAnotacao] = react.useState('');
 
-  function handlePress() {
+  useEffect(() => {
+    (async () => {
+      try {
+        const value = await AsyncStorage.getItem('anotacao');
+        if (value !== null) setAnotacao(value)
+      } catch (error) {
+        console.log(error, 'Error!');
+      }
+    })();
+  }, [])
 
+  async function setData() {
+    try {
+      await AsyncStorage.setItem('anotacao', anotacao);
+      setEstado('leitura');
+    } catch (error) {
+      alert('Não foi possível salvar a edição.');
+    }
+    alert('Anotação salva.');
   }
 
+  function atualizarTexto() {
+    setEstado('leitura');
+    setData();
+  }
+
+  /* RENDERIZAÇÃO */
   if (estado == 'leitura') {
     return (
-      <View style={{ width: '100%' }}>
-        <StatusBar style="light" />
+      <View style={{ width: '100%', flex: 1 }}>
         <View style={styles.header}>
           <Text style={{
             textAlign: 'center',
@@ -24,25 +46,39 @@ export default function App() {
             Aplicativo Anotação
           </Text>
         </View>
-        <View style={{ padding: 20 }}>
-          <Text style={styles.anotacao}>
-            {anotacao}
-          </Text>
-        </View>
+        {(anotacao) ? (
+          <View style={{ padding: 20 }}>
+            <Text style={styles.anotacao}>
+              {anotacao}
+            </Text>
+          </View>
+        ) : (
+          <View style={{ padding: 20 }}>
+            <Text style={{ ...styles.anotacao, opacity: 0.3 }}>
+              Nenhuma anotação até o momento.
+            </Text>
+          </View>
+        )}
         <TouchableOpacity
-          style={styles.btnAnotacao}
+          style={anotacao === '' ? styles.btnAnotacao : styles.btnSalvar}
           onPress={() => setEstado('atualizando')}
         >
-          <Text style={styles.btnAnotacaoTexto}>+</Text>
+          {
+            (anotacao === '') ? (
+              <Text style={styles.btnAnotacaoTexto}>+</Text>
+            ) : (
+              <Text style={styles.btnAnotacaoTexto}>Editar</Text>
+            )
+          }
         </TouchableOpacity>
+        <StatusBar style="auto" hidden />
       </View>
     );
   }
 
   else if (estado == 'atualizando') {
     return (
-      <View style={{ width: '100%' }}>
-        <StatusBar style="light" />
+      <View style={{ width: '100%', flex: 1 }}>
         <View style={styles.header}>
           <Text style={{
             textAlign: 'center',
@@ -52,15 +88,29 @@ export default function App() {
             Aplicativo Anotação
           </Text>
         </View>
-        <Text>Atualizando...</Text>
+        <TextInput
+          autoFocus={true}
+          onChangeText={(text) => setAnotacao(text)}
+          multiline={true}
+          numberOfLines={5}
+          value={anotacao}
+          style={{
+            padding: 8,
+            marginBottom: 16,
+            textAlignVertical: 'top'
+          }}
+        >
+        </TextInput>
         <TouchableOpacity
           style={styles.btnSalvar}
-          onPress={() => setEstado('leitura')}
+          onPress={() => atualizarTexto()}
         >
           <Text style={styles.btnAnotacaoTexto}>
             Salvar
           </Text>
         </TouchableOpacity>
+        <Text>Atualizando...</Text>
+        <StatusBar style="auto" hidden />
       </View>
     )
   }
